@@ -81,5 +81,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='media/icon.ico',  # Will use default if not exists
+    icon='media/icon.ico',
+    version='version_info.txt',
 )
