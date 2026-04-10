@@ -90,4 +90,78 @@ ffmpeg-python>=0.2.0
 
 ---
 
+---
+
+## 5. Nove implementirane funkcije (2026-04-10)
+
+### ✅ 5.1 Multi-face podpora
+- Ze implementirano v sistemu - samo omogociti v UI z `--many-faces`
+
+### ✅ 5.2 Lip Sync modul ( lip_sync.py)
+```python
+from modules.lip_sync import create_lip_sync_video, check_lip_sync_available
+
+# Za audio-driven usta
+audio_path = "voice.wav"
+create_lip_sync_video(video_path, audio_path, output_path)
+```
+
+### ✅ 5.3 Face Restoration ( face_restoration.py)
+```python
+from modules.face_restoration import enhance_face, resize_to_resolution
+
+# Obnova obraza po swap-u
+enhanced = enhance_face(face_image, model_type="gfpgan")
+
+# 4K/8K izhod
+frame_4k = resize_to_resolution(frame, "4k")
+```
+
+### ✅ 5.4 Web API ( web_api.py)
+```python
+from modules.web_api import start_api_server
+
+# Zagon API-ja
+api = start_api_server(host="0.0.0.0", port=5000)
+api.run()
+# Ali: python run.py --api --api-port 5000
+```
+
+### ✅ 5.5 Batch Processing ( batch.py)
+```python
+from modules.batch import batch_process_directory, BatchProcessConfig
+
+config = BatchProcessConfig(num_workers=4, recursive=True)
+results = batch_process_directory(
+    source_path="source.jpg",
+    input_dir="input/",
+    output_dir="output/",
+    config=config
+)
+```
+
+---
+
+## 6. Requirements - posodobljeno
+
+```
+# ... osnovni paketi ...
+
+# Optional: Lip Sync
+librosa>=0.10.0
+soundfile>=0.12.0
+
+# Optional: Face Restoration  
+gfpgan>=1.3.0
+facexlib>=0.3.0
+
+# Optional: Web API
+flask>=3.0.0
+fastapi>=0.100.0
+uvicorn>=0.25.0
+pydantic>=2.0.0
+```
+
+---
+
 *Povzetek avdita: 2026-04-10 | Popravljeno: 2026-04-10*

@@ -34,6 +34,8 @@ nsfw_filter: bool = False
 # Video Output Options
 video_encoder: str | None = None
 video_quality: int | None = None # Typically a CRF value or bitrate
+video_resolution: str = "original"  # "original", "1080p", "2k", "4k", "8k"
+video_fps: float = 30.0  # Output FPS (0 = keep original)
 
 # Live Mode Options
 live_mirror: bool = False
