@@ -260,7 +260,7 @@ def start() -> None:
             create_temp(modules.globals.target_path)
             update_status('Extracting frames...')
             extract_frames(modules.globals.target_path)
-        extraction_time = time.time() - extraction_start
+        _extraction_time = time.time() - extraction_start
 
         temp_frame_paths = get_temp_frame_paths(modules.globals.target_path)
         total_frames = len(temp_frame_paths)
@@ -310,7 +310,8 @@ def start() -> None:
 def destroy(to_quit=True) -> None:
     if modules.globals.target_path:
         clean_temp(modules.globals.target_path)
-    if to_quit: quit()
+    if to_quit:
+        quit()
 
 
 def run() -> None:

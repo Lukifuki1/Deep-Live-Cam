@@ -9,7 +9,6 @@ import time
 import json
 import queue
 import threading
-import numpy as np
 import requests
 import tempfile
 import modules.globals
@@ -34,7 +33,6 @@ from modules.utilities import (
 from modules.video_capture import VideoCapturer
 from modules.gettext import LanguageManager
 from modules.ui_tooltip import ToolTip
-from modules import globals
 import platform
 
 if platform.system() == "Windows":
@@ -335,9 +333,8 @@ def create_root(start: Callable[[], None], destroy: Callable[[], None]) -> ctk.C
     show_fps_switch.place(relx=0.6, rely=0.52)
     ToolTip(show_fps_switch, _("Display frames-per-second counter on the live preview"))
 
-    # mouth_mask and show_mouth_mask_box are auto-controlled by the Mouth Mask slider
+    # mouth_mask is auto-controlled by the Mouth Mask slider
     mouth_mask_var = ctk.BooleanVar(value=modules.globals.mouth_mask)
-    show_mouth_mask_box_var = ctk.BooleanVar(value=modules.globals.show_mouth_mask_box)
 
     start_button = ctk.CTkButton(
         root, text=_("Start"), cursor="hand2", command=lambda: analyze_target(start, root)
@@ -587,7 +584,7 @@ def close_mapper_window():
 
 
 def analyze_target(start: Callable[[], None], root: ctk.CTk):
-    if POPUP != None and POPUP.winfo_exists():
+    if POPUP is not None and POPUP.winfo_exists():
         update_status("Please complete pop-up or close it.")
         return
 
@@ -648,7 +645,7 @@ def create_source_target_popup(
 
         x_label = ctk.CTkLabel(
             scrollable_frame,
-            text=f"X",
+            text="X",
             width=MAPPER_PREVIEW_MAX_WIDTH,
             height=MAPPER_PREVIEW_MAX_HEIGHT,
         )
@@ -1379,7 +1376,7 @@ def refresh_data(map: list):
 
         x_label = ctk.CTkLabel(
             scrollable_frame,
-            text=f"X",
+            text="X",
             width=MAPPER_PREVIEW_MAX_WIDTH,
             height=MAPPER_PREVIEW_MAX_HEIGHT,
         )

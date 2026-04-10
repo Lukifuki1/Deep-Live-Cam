@@ -1,0 +1,5 @@
+[lint]
+extend-ignore = ["E402"]
+
+[lint.per-file-ignores]
+"run.py" = ["E402"]

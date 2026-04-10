@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 
 # Add the project root to PATH so bundled ffmpeg/ffprobe are found
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -15,8 +14,9 @@ if os.path.isdir(nvidia_dir):
         if os.path.isdir(bin_dir):
             os.environ["PATH"] = bin_dir + os.pathsep + os.environ["PATH"]
 
-# Import the tkinter fix to patch the ScreenChanged error
-import tkinter_fix
+# Import tkinter_fix to apply the ScreenChanged patch at startup
+# The module's apply_patch() is called automatically on import
+import tkinter_fix  # noqa: F401 - needed for side effects
 
 from modules import core
 

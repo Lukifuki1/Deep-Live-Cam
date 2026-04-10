@@ -1,6 +1,7 @@
 from typing import Any, List, Optional
 import cv2
 import insightface
+import logging
 import threading
 import numpy as np
 import platform
@@ -15,7 +16,7 @@ from modules.utilities import (
     is_video,
 )
 from modules.cluster_analysis import find_closest_centroid
-from modules.gpu_processing import gpu_gaussian_blur, gpu_sharpen, gpu_add_weighted, gpu_resize, gpu_cvt_color
+from modules.gpu_processing import gpu_gaussian_blur, gpu_sharpen, gpu_add_weighted, gpu_resize
 import os
 from collections import deque
 import time
@@ -189,7 +190,7 @@ def swap_face(source_face: Face, target_face: Face, temp_frame: Frame) -> Frame:
              # Attempt resize (might distort if aspect ratio changed, but better than crashing)
              try:
                  swapped_frame_raw = gpu_resize(swapped_frame_raw, (temp_frame.shape[1], temp_frame.shape[0]))
-             except Exception as resize_e:
+             except Exception:
                  # print(f"Error resizing swapped frame: {resize_e}") # Debug
                  return original_frame
 
@@ -334,7 +335,8 @@ def apply_post_processing(current_frame: Frame, swapped_face_bboxes: List[np.nda
                 continue
 
             face_region = processed_frame[y1:y2, x1:x2]
-            if face_region.size == 0: continue
+            if face_region.size == 0:
+                continue
 
             # Apply sharpening (GPU-accelerated when CUDA OpenCV is available)
             try:
@@ -362,7 +364,7 @@ def apply_post_processing(current_frame: Frame, swapped_face_bboxes: List[np.nda
                  )
                  # Ensure final frame is uint8
                  final_frame = np.clip(final_frame, 0, 255).astype(np.uint8)
-            except cv2.error as interp_e:
+            except cv2.error:
                  # print(f"Warning: OpenCV error during interpolation: {interp_e}") # Debug
                  final_frame = processed_frame # Use current frame if interpolation fails
                  PREVIOUS_FRAME_RESULT = None # Reset state if error occurs
@@ -471,9 +473,11 @@ def process_frame_v2(temp_frame: Frame, temp_frame_path: str = "") -> Frame:
             else: # Single face or specific mapping
                  for map_data in source_target_map:
                     source_info = map_data.get("source", {})
-                    if not source_info: continue # Skip if no source info
+                    if not source_info:
+                        continue  # Skip if no source info
                     source_face = source_info.get("face")
-                    if not source_face: continue # Skip if no source defined for this map entry
+                    if not source_face:
+                        continue  # Skip if no source defined for this map entry
 
                     if is_image(modules.globals.target_path):
                         target_info = map_data.get("target", {})
@@ -510,7 +514,8 @@ def process_frame_v2(temp_frame: Frame, temp_frame_path: str = "") -> Frame:
                      if len(detected_faces) <= len(target_embeddings):
                           # More targets defined than detected - match each detected face
                           for detected_face in detected_faces:
-                              if detected_face.normed_embedding is None: continue
+                              if detected_face.normed_embedding is None:
+                                  continue
                               closest_idx, _ = find_closest_centroid(target_embeddings, detected_face.normed_embedding)
                               if 0 <= closest_idx < len(source_faces):
                                   source_target_pairs.append((source_faces[closest_idx], detected_face))
@@ -518,10 +523,11 @@ def process_frame_v2(temp_frame: Frame, temp_frame_path: str = "") -> Frame:
                           # More faces detected than targets defined - match each target embedding to closest detected face
                           detected_embeddings = [f.normed_embedding for f in detected_faces if f.normed_embedding is not None]
                           detected_faces_with_embedding = [f for f in detected_faces if f.normed_embedding is not None]
-                          if not detected_embeddings: return processed_frame # No embeddings to match
+                          if not detected_embeddings:
+                              return processed_frame  # No embeddings to match
 
                           for i, target_embedding in enumerate(target_embeddings):
-                              if 0 <= i < len(source_faces): # Ensure source face exists for this embedding
+                              if 0 <= i < len(source_faces):  # Ensure source face exists for this embedding
                                  closest_idx, _ = find_closest_centroid(detected_embeddings, target_embedding)
                                  if 0 <= closest_idx < len(detected_faces_with_embedding):
                                      source_target_pairs.append((source_faces[i], detected_faces_with_embedding[closest_idx]))
@@ -592,7 +598,7 @@ def process_frames(
 
     # --- Stop processing entirely if in Simple Mode and source face is invalid ---
     if not use_v2 and source_face is None:
-        update_status(f"Halting video processing: Invalid or no face detected in source image for simple mode.", NAME)
+        update_status("Halting video processing: Invalid or no face detected in source image for simple mode.", NAME)
         if progress:
             # Ensure the progress bar completes if it was started
             remaining_updates = total_frames - progress.n if hasattr(progress, 'n') else total_frames
@@ -611,11 +617,13 @@ def process_frames(
             temp_frame = cv2.imread(temp_frame_path)
             if temp_frame is None:
                 print(f"{NAME}: Error: Could not read frame: {temp_frame_path}, skipping.")
-                if progress: progress.update(1)
-                continue # Skip this frame if read fails
+                if progress:
+                    progress.update(1)
+                continue  # Skip this frame if read fails
         except Exception as read_e:
             print(f"{NAME}: Error reading frame {temp_frame_path}: {read_e}, skipping.")
-            if progress: progress.update(1)
+            if progress:
+                progress.update(1)
             continue
 
         # Select processing function and execute
@@ -854,7 +862,7 @@ def create_lower_mouth_mask(
             # print("Warning: Invalid mouth mask bounding box after padding/clamping.") # Optional debug
             pass
 
-    except IndexError as idx_e:
+    except IndexError:
         # print(f"Warning: Landmark index out of bounds during mouth mask creation: {idx_e}") # Optional debug
         pass
     except Exception as e:
@@ -916,7 +924,7 @@ def draw_mouth_mask_visualization(
     try:
         cv2.putText(vis_frame, "Mouth Mask", (label_pos_x, label_pos_y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-    except Exception as e:
+    except Exception:
         # print(f"Error drawing text for visualization: {e}") # Optional debug
         pass
 
@@ -1133,21 +1141,23 @@ def apply_color_transfer(source, target):
         # print("Warning: Source image for color transfer is not uint8 BGR.")
         # Attempt conversion if possible, otherwise return original
         try:
-            if len(source.shape) == 2: # Grayscale
+            if len(source.shape) == 2:  # Grayscale
                 source = cv2.cvtColor(source, cv2.COLOR_GRAY2BGR)
             source = np.clip(source, 0, 255).astype(np.uint8)
-            if len(source.shape)!= 3 or source.shape[2]!= 3: raise ValueError("Conversion failed")
+            if len(source.shape) != 3 or source.shape[2] != 3:
+                raise ValueError("Conversion failed")
         except Exception:
             return source
     if len(target.shape) != 3 or target.shape[2] != 3 or target.dtype != np.uint8:
         # print("Warning: Target image for color transfer is not uint8 BGR.")
         try:
-            if len(target.shape) == 2: # Grayscale
+            if len(target.shape) == 2:  # Grayscale
                 target = cv2.cvtColor(target, cv2.COLOR_GRAY2BGR)
             target = np.clip(target, 0, 255).astype(np.uint8)
-            if len(target.shape)!= 3 or target.shape[2]!= 3: raise ValueError("Conversion failed")
+            if len(target.shape) != 3 or target.shape[2] != 3:
+                raise ValueError("Conversion failed")
         except Exception:
-             return source # Return original source if target invalid
+             return source  # Return original source if target invalid
 
     result_bgr = source # Default to original source in case of errors
 
@@ -1189,10 +1199,10 @@ def apply_color_transfer(source, target):
         # Convert back to uint8 [0, 255]
         result_bgr = (result_bgr_float * 255.0).astype("uint8")
 
-    except cv2.error as e:
+    except cv2.error:
          # print(f"OpenCV error during color transfer: {e}. Returning original source.") # Optional debug
          return source # Return original source if conversion fails
-    except Exception as e:
+    except Exception:
          # print(f"Unexpected color transfer error: {e}. Returning original source.") # Optional debug
          # import traceback
          # traceback.print_exc()

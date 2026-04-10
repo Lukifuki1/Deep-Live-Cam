@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from modules.typing import Face, Frame
 import modules.globals
-from modules.gpu_processing import gpu_gaussian_blur, gpu_resize, gpu_cvt_color
+from modules.gpu_processing import gpu_gaussian_blur, gpu_resize
 
 def apply_color_transfer(source, target):
     """
@@ -42,10 +42,7 @@ def create_face_mask(face: Face, frame: Frame) -> np.ndarray:
         # Extract facial features
         right_side_face = landmarks[0:16]
         left_side_face = landmarks[17:32]
-        right_eye = landmarks[33:42]
-        right_eye_brow = landmarks[43:51]
-        left_eye = landmarks[87:96]
-        left_eye_brow = landmarks[97:105]
+        # Note: landmark indices 33-42, 43-51, 87-96, 97-105 are available for future use
 
         # Calculate padding
         padding = int(
@@ -294,10 +291,6 @@ def create_eyebrows_mask(face: Face, frame: Frame) -> (np.ndarray, np.ndarray, t
         left_eyebrow = landmarks[97:105].astype(np.float32)
         right_eyebrow = landmarks[43:51].astype(np.float32)
         
-        # Calculate centers and dimensions for each eyebrow
-        left_center = np.mean(left_eyebrow, axis=0)
-        right_center = np.mean(right_eyebrow, axis=0)
-        
         # Calculate bounding box with padding adjusted by size
         all_points = np.vstack([left_eyebrow, right_eyebrow])
         padding_factor = modules.globals.eyebrows_mask_size
@@ -408,7 +401,7 @@ def create_eyebrows_mask(face: Face, frame: Frame) -> (np.ndarray, np.ndarray, t
                 right_shape + [min_x, min_y]
             ]).astype(np.int32)
             
-        except Exception as e:
+        except Exception:
             # Fallback to simple polygons if curve fitting fails
             left_local = left_eyebrow - [min_x, min_y]
             right_local = right_eyebrow - [min_x, min_y]
@@ -500,7 +493,7 @@ def apply_mask_area(
         final_blend = blended * face_mask_3channel + roi * (np.float32(1.0) - face_mask_3channel)
 
         frame[min_y:max_y, min_x:max_x] = final_blend.astype(np.uint8)
-    except Exception as e:
+    except Exception:
         pass
 
     return frame
@@ -540,7 +533,7 @@ def draw_mask_visualization(
                 # Draw the ellipses
                 cv2.ellipse(vis_frame, left_ellipse, (0, 255, 0), 2)
                 cv2.ellipse(vis_frame, right_ellipse, (0, 255, 0), 2)
-        except Exception as e:
+        except Exception:
             # If ellipse fitting fails, draw simple rectangles as fallback
             left_rect = cv2.boundingRect(left_points)
             right_rect = cv2.boundingRect(right_points)

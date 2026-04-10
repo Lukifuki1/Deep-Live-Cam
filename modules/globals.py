@@ -1,6 +1,7 @@
 # --- START OF FILE globals.py ---
 
 import os
+import threading
 from typing import List, Dict, Any
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -72,5 +73,4 @@ interpolation_weight: float = 0  # Blend weight for current frame (0.0-1.0). Low
 
 # --- END OF FILE globals.py ---
 
-import threading
 dml_lock = threading.Lock()
