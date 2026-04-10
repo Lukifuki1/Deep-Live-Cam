@@ -343,9 +343,8 @@ def apply_post_processing(current_frame: Frame, swapped_face_bboxes: List[np.nda
                 sigma = 2 if IS_APPLE_SILICON else 3
                 sharpened_region = gpu_sharpen(face_region, strength=sharpness_value, sigma=sigma)
                 processed_frame[y1:y2, x1:x2] = sharpened_region
-            except cv2.error:
-                pass
-
+            except cv2.error as e:
+                logging.warning(f"{NAME}: GPU sharpen failed, using original: {e}")
 
     # 2. Apply Interpolation (if enabled)
     enable_interpolation = getattr(modules.globals, "enable_interpolation", False)
@@ -374,8 +373,7 @@ def apply_post_processing(current_frame: Frame, swapped_face_bboxes: List[np.nda
         else:
             # If previous frame invalid or doesn't match, use current frame and update state
             if PREVIOUS_FRAME_RESULT is not None and PREVIOUS_FRAME_RESULT.shape != processed_frame.shape:
-                # print("Info: Frame shape changed, resetting interpolation state.") # Debug
-                pass
+                logging.info("Frame shape changed, resetting interpolation state.")
             PREVIOUS_FRAME_RESULT = processed_frame.copy()
     else:
          # Interpolation is off or weight is invalid — no need to cache
@@ -859,17 +857,12 @@ def create_lower_mouth_mask(
             lower_lip_polygon = expanded_landmarks # Return polygon in original frame coords
             mouth_box = (min_x, min_y, max_x, max_y) # Return the calculated box
         else:
-            # print("Warning: Invalid mouth mask bounding box after padding/clamping.") # Optional debug
-            pass
+            logging.warning("Invalid mouth mask bounding box after padding/clamping.")
 
     except IndexError:
-        # print(f"Warning: Landmark index out of bounds during mouth mask creation: {idx_e}") # Optional debug
-        pass
+        logging.warning(f"Landmark index out of bounds during mouth mask creation")
     except Exception as e:
-        print(f"Error in create_lower_mouth_mask: {e}") # Print unexpected errors
-        # import traceback
-        # traceback.print_exc()
-        pass
+        logging.error(f"Error in create_lower_mouth_mask: {e}")
 
     # Return values, ensuring defaults if errors occurred
     return mask, mouth_cutout, mouth_box, lower_lip_polygon
@@ -912,8 +905,7 @@ def draw_mouth_mask_visualization(
          safe_polygon[:, 1] = np.clip(safe_polygon[:, 1], 0, height - 1)
          cv2.polylines(vis_frame, [safe_polygon.astype(np.int32)], isClosed=True, color=(0, 255, 0), thickness=2)
     except Exception as e:
-        print(f"Error drawing polygon for visualization: {e}") # Optional debug
-        pass
+        logging.warning(f"Error drawing polygon for visualization: {e}")
 
     # Draw bounding box (red rectangle)
     cv2.rectangle(vis_frame, (min_x, min_y), (max_x, max_y), (0, 0, 255), 2)
@@ -924,9 +916,8 @@ def draw_mouth_mask_visualization(
     try:
         cv2.putText(vis_frame, "Mouth Mask", (label_pos_x, label_pos_y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-    except Exception:
-        # print(f"Error drawing text for visualization: {e}") # Optional debug
-        pass
+    except Exception as e:
+        logging.warning(f"Error drawing text for visualization: {e}")
 
 
     return vis_frame
@@ -1116,13 +1107,9 @@ def create_face_mask(face: Face, frame: Frame) -> np.ndarray:
         # ---
 
     except IndexError:
-        # print("Warning: Landmark index out of bounds for face mask.") # Optional debug
-        pass
+        logging.warning("Landmark index out of bounds for face mask.")
     except Exception as e:
-        print(f"Error creating face mask: {e}") # Print unexpected errors
-        # import traceback
-        # traceback.print_exc()
-        pass
+        logging.error(f"Error creating face mask: {e}")
 
     return mask # Return uint8 mask
 

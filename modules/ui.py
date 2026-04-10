@@ -886,9 +886,7 @@ def select_output_path(start: Callable[[], None]) -> None:
 
 
 def check_and_ignore_nsfw(target, destroy: Callable = None) -> bool:
-    """Check if the target is NSFW.
-    TODO: Consider to make blur the target.
-    """
+    """Check if the target is NSFW and filter it if detected."""
     from numpy import ndarray
     from modules.predicter import predict_image, predict_video, predict_frame
 

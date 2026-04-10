@@ -17,10 +17,15 @@ Usage
 """
 
 from __future__ import annotations
+import logging
 
 import cv2
 import numpy as np
 from typing import Tuple
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # CUDA availability detection (evaluated once at import time)
@@ -38,9 +43,9 @@ try:
         CUDA_AVAILABLE = True
         print("[gpu_processing] OpenCV CUDA support detected – GPU-accelerated processing enabled.")
     else:
-        pass  # silently fall back to CPU
-except Exception:
-    pass  # silently fall back to CPU
+        logger.info("OpenCV CUDA not available - falling back to CPU")
+except Exception as e:
+    logger.warning(f"CUDA detection failed, falling back to CPU: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -99,8 +104,8 @@ def gpu_gaussian_blur(
             gpu_src.upload(src_u8)
             gpu_dst = gauss.apply(gpu_src)
             return gpu_dst.download()
-        except cv2.error:
-            pass
+        except cv2.error as e:
+            logger.warning(f"GPU Gaussian blur failed, falling back to CPU: {e}")
 
     return cv2.GaussianBlur(src, ksize, sigma_x, sigmaY=sigma_y)
 
@@ -127,8 +132,8 @@ def gpu_add_weighted(
             g2.upload(s2)
             gpu_dst = cv2.cuda.addWeighted(g1, alpha, g2, beta, gamma)
             return gpu_dst.download()
-        except cv2.error:
-            pass
+        except cv2.error as e:
+            logger.warning(f"GPU addWeighted failed, falling back to CPU: {e}")
 
     return cv2.addWeighted(src1, alpha, src2, beta, gamma)
 
@@ -164,8 +169,8 @@ def gpu_sharpen(
             gpu_sharp = cv2.cuda.addWeighted(gpu_src, 1.0 + strength, gpu_blurred, -strength, 0)
             result = gpu_sharp.download()
             return np.clip(result, 0, 255).astype(np.uint8)
-        except cv2.error:
-            pass
+        except cv2.error as e:
+            logger.warning(f"GPU sharpen failed, falling back to CPU: {e}")
 
     blurred = cv2.GaussianBlur(src, (0, 0), sigma)
     sharpened = cv2.addWeighted(src, 1.0 + strength, blurred, -strength, 0)
@@ -211,8 +216,8 @@ def gpu_resize(
                 gpu_dst = cv2.cuda.resize(gpu_src, (0, 0), fx=fx, fy=fy, interpolation=interp)
 
             return gpu_dst.download()
-        except cv2.error:
-            pass
+        except cv2.error as e:
+            logger.warning(f"GPU resize failed, falling back to CPU: {e}")
 
     return cv2.resize(src, dsize, fx=fx, fy=fy, interpolation=interpolation)
 
@@ -236,8 +241,8 @@ def gpu_cvt_color(
             gpu_src.upload(src_u8)
             gpu_dst = cv2.cuda.cvtColor(gpu_src, code)
             return gpu_dst.download()
-        except cv2.error:
-            pass
+        except cv2.error as e:
+            logger.warning(f"GPU cvtColor failed, falling back to CPU: {e}")
 
     return cv2.cvtColor(src, code)
 
@@ -262,8 +267,8 @@ def gpu_flip(
             gpu_src.upload(src_u8)
             gpu_dst = cv2.cuda.flip(gpu_src, flip_code)
             return gpu_dst.download()
-        except cv2.error:
-            pass
+        except cv2.error as e:
+            logger.warning(f"GPU flip failed, falling back to CPU: {e}")
 
     return cv2.flip(src, flip_code)
 

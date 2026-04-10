@@ -5,7 +5,6 @@ import threading
 from typing import List, Dict, Any
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-WORKFLOW_DIR = os.path.join(ROOT_DIR, "workflow")
 
 file_types = [
     ("Image", ("*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp")),
@@ -29,7 +28,7 @@ keep_frames: bool = False
 many_faces: bool = False         # Process all detected faces with default source
 map_faces: bool = False          # Use source_target_map or simple_map for specific swaps
 poisson_blend: bool = False      # Enable Poisson Blending for smoother face swaps
-color_correction: bool = False   # Enable color correction (implementation specific)
+color_correction: bool = False   # Enable color correction
 nsfw_filter: bool = False
 
 # Video Output Options

@@ -1,5 +1,11 @@
 import os
 import sys
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='[%(name)s] %(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
+
 # single thread doubles cuda performance - needs to be set before torch import
 if any(arg.startswith('--execution-provider') for arg in sys.argv):
     os.environ['OMP_NUM_THREADS'] = '6'
@@ -206,7 +212,7 @@ def start() -> None:
         try:
             shutil.copy2(modules.globals.target_path, modules.globals.output_path)
         except Exception as e:
-            print("Error copying file:", str(e))
+            logger.error(f"Error copying file: {e}")
         for frame_processor in get_frame_processors_modules(modules.globals.frame_processors):
             update_status('Progressing...', frame_processor.NAME)
             frame_processor.process_image(modules.globals.source_path, modules.globals.output_path, modules.globals.output_path)

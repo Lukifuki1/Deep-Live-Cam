@@ -194,6 +194,9 @@ def default_target_face():
 
 
 def dump_faces(centroids: Any, frame_face_embeddings: list):
+    """Dump extracted face images to temp directories for debugging."""
+    import logging
+    logging.info("Dumping faces to temp directories for debugging...")
     temp_directory_path = get_temp_directory_path(modules.globals.target_path)
 
     for i in range(len(centroids)):
